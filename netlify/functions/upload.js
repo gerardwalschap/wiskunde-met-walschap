@@ -8,22 +8,32 @@ exports.handler = async (event) => {
     const { path, fileBase64, fileName } = JSON.parse(event.body);
     const fileBuffer = Buffer.from(fileBase64, 'base64');
 
+    // Voor App Folder: pad mag niet beginnen met /Apps/... 
+    // Dropbox App Folder gebruikt het pad relatief aan de app folder
+    const cleanPath = path.startsWith('/') ? path : '/' + path;
+
     const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + token,
         'Content-Type': 'application/octet-stream',
-        'Dropbox-API-Arg': JSON.stringify({ path, mode: 'overwrite', autorename: false })
+        'Dropbox-API-Arg': JSON.stringify({ 
+          path: cleanPath, 
+          mode: 'overwrite', 
+          autorename: false,
+          mute: true
+        })
       },
       body: fileBuffer
     });
 
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      const err = await response.text();
-      return { statusCode: 500, body: JSON.stringify({ error: err }) };
+      return { statusCode: 500, body: JSON.stringify({ error: responseText }) };
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseText);
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*' },
