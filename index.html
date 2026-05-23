@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wiskunde met Walschap</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1a2e;--paper:#f8f6f1;--accent:#2d6a4f;--accent2:#52b788;--muted:#6c757d;--border:#ddd8cc;--card:#ffffff;--danger:#c0392b;--danger-bg:#fdf0ef}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+header{background:var(--ink);color:#fff;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Playfair Display',serif;font-size:1.25rem;color:#fff}
+.logo span{color:var(--accent2)}
+.header-actions{display:flex;align-items:center;gap:8px}
+.btn-ghost{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:7px 14px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:0.83rem;cursor:pointer}
+.btn-ghost:hover{background:rgba(255,255,255,0.2)}
+.admin-badge{display:flex;align-items:center;gap:6px;background:rgba(82,183,136,0.2);color:var(--accent2);padding:4px 10px;border-radius:20px;font-size:0.78rem;font-weight:500}
+.admin-dot{width:6px;height:6px;border-radius:50%;background:var(--accent2)}
+.login-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,0.55);z-index:300;align-items:center;justify-content:center}
+.login-overlay.show{display:flex}
+.login-box{background:var(--card);border-radius:16px;padding:2.25rem;width:360px;text-align:center}
+.login-icon{font-size:2rem;margin-bottom:0.75rem}
+.login-box h2{font-family:'Playfair Display',serif;font-size:1.35rem;margin-bottom:0.4rem}
+.login-box p{font-size:0.88rem;color:var(--muted);margin-bottom:1.5rem}
+.login-box input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--ink);background:var(--paper);margin-bottom:10px;outline:none;text-align:center}
+.login-box input:focus{border-color:var(--accent2)}
+.login-box input.error{border-color:var(--danger)}
+.login-error{font-size:0.82rem;color:var(--danger);margin-bottom:10px;min-height:18px}
+.btn-login{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.92rem;font-weight:500;cursor:pointer}
+.btn-login:hover{background:#1e5037}
+.btn-cancel-login{width:100%;padding:8px;background:none;color:var(--muted);border:none;font-family:'DM Sans',sans-serif;font-size:0.85rem;cursor:pointer;margin-top:6px}
+.layout{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:268px;flex-shrink:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar-top{padding:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sidebar-title{font-size:0.72rem;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)}
+.btn-add-klas{display:none;background:none;border:1px solid var(--border);color:var(--accent);padding:4px 10px;border-radius:5px;font-size:0.78rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-add-klas.visible{display:block}
+.btn-add-klas:hover{background:#e8f5ee}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:8px}
+.klas-block{margin-bottom:4px}
+.klas-row{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 10px;border-radius:8px;cursor:pointer;transition:background 0.15s;user-select:none}
+.klas-row:hover{background:var(--paper)}
+.klas-row.active{background:#e8f5ee}
+.klas-icon{font-size:1rem}
+.klas-name{font-size:0.88rem;font-weight:500;flex:1;color:var(--ink)}
+.klas-row.active .klas-name{color:var(--accent)}
+.klas-chevron{color:var(--muted);font-size:0.65rem;transition:transform 0.2s}
+.klas-chevron.open{transform:rotate(90deg)}
+.klas-acts{display:none;gap:2px}
+.klas-row:hover .klas-acts{display:flex}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.8rem;padding:2px 4px;border-radius:4px;line-height:1}
+.icon-btn:hover{color:var(--ink);background:var(--border)}
+.icon-btn.danger:hover{color:var(--danger);background:var(--danger-bg)}
+.onderwerp-list{padding:0 0 4px 20px}
+.onderwerp-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:0.83rem;color:var(--muted);transition:background 0.15s,color 0.15s;user-select:none}
+.onderwerp-row:hover{background:var(--paper);color:var(--ink)}
+.onderwerp-row.active{background:#e8f5ee;color:var(--accent);font-weight:500}
+.onderwerp-dot{width:5px;height:5px;border-radius:50%;background:var(--border);flex-shrink:0}
+.onderwerp-row.active .onderwerp-dot{background:var(--accent2)}
+.onderwerp-name{flex:1}
+.o-acts{display:none;gap:2px}
+.onderwerp-row:hover .o-acts{display:flex}
+.drag-handle{cursor:grab;color:var(--border);font-size:0.75rem;padding:0 2px}
+.onderwerp-row:hover .drag-handle{color:var(--muted)}
+.add-o-btn{width:100%;background:none;border:none;color:var(--muted);font-size:0.8rem;padding:5px 8px;border-radius:6px;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;display:none}
+.add-o-btn.visible{display:block}
+.add-o-btn:hover{color:var(--accent);background:var(--paper)}
+main{flex:1;padding:2rem 2.5rem;overflow-y:auto;max-width:900px}
+.breadcrumb{font-size:0.78rem;color:var(--muted);margin-bottom:1.25rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.breadcrumb .crumb{color:var(--ink);font-weight:500;cursor:pointer}
+.breadcrumb .crumb:hover{color:var(--accent)}
+.page-title{font-family:'Playfair Display',serif;font-size:1.75rem;margin-bottom:0.2rem}
+.page-sub{font-size:0.88rem;color:var(--muted);margin-bottom:1.75rem}
+.submap-tabs{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center}
+.submap-tab{padding:6px 14px;border-radius:20px;font-size:0.83rem;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);display:flex;align-items:center;gap:5px}
+.submap-tab:hover{border-color:var(--accent2);color:var(--ink)}
+.submap-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab-count{background:rgba(255,255,255,0.25);border-radius:10px;padding:1px 6px;font-size:0.72rem}
+.submap-tab:not(.active) .tab-count{background:var(--paper);color:var(--muted)}
+.btn-add-sub{padding:6px 12px;border-radius:20px;font-size:0.8rem;cursor:pointer;border:1px dashed var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;display:none}
+.btn-add-sub.visible{display:inline-flex}
+.btn-add-sub:hover{border-color:var(--accent2);color:var(--accent)}
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;margin-bottom:1.5rem;background:var(--card)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent2);background:#f0faf5}
+.upload-icon{font-size:1.8rem;margin-bottom:0.6rem;color:var(--accent2)}
+.upload-zone p{font-size:0.88rem;color:var(--muted)}
+#file-input{display:none}
+.section-label{font-size:0.72rem;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:10px}
+.files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:1.5rem}
+.file-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 0.9rem;cursor:pointer;transition:border-color 0.2s,transform 0.15s;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;position:relative}
+.file-card:hover{border-color:var(--accent2);transform:translateY(-2px)}
+.file-card:hover .dl-badge{opacity:1}
+.file-icon{font-size:2rem}
+.file-name{font-size:0.8rem;font-weight:500;color:var(--ink);line-height:1.3;word-break:break-word}
+.file-date{font-size:0.72rem;color:var(--muted)}
+.dl-badge{position:absolute;top:7px;right:7px;background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.68rem;opacity:0;transition:opacity 0.2s}
+.del-btn{position:absolute;top:7px;left:7px;background:none;border:none;color:var(--muted);font-size:0.72rem;cursor:pointer;display:none;padding:2px}
+.del-btn:hover{color:var(--danger)}
+.download-all-btn{display:inline-flex;align-items:center;gap:7px;background:var(--ink);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;margin-bottom:1.5rem}
+.download-all-btn:hover{background:#2d2d4e}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:1rem}
+.welcome-title{font-family:'Playfair Display',serif;font-size:2.2rem;line-height:1.2}
+.welcome-sub{font-size:0.95rem;color:var(--muted);max-width:400px}
+.klas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:1.25rem;width:100%;max-width:480px}
+.klas-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem 0.9rem;cursor:pointer;text-align:center;transition:border-color 0.2s,transform 0.15s}
+.klas-card:hover{border-color:var(--accent2);transform:translateY(-3px)}
+.klas-card-icon{font-size:1.5rem;margin-bottom:0.4rem}
+.klas-card-name{font-weight:500;font-size:0.9rem}
+.klas-card-count{font-size:0.75rem;color:var(--muted);margin-top:2px}
+.folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:1.5rem}
+.folder-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.1rem 0.9rem;cursor:pointer;text-align:center;transition:border-color 0.2s,transform 0.15s;position:relative}
+.folder-card:hover{border-color:var(--accent2);transform:translateY(-2px)}
+.folder-icon{font-size:1.9rem;margin-bottom:0.4rem}
+.folder-name{font-size:0.83rem;font-weight:500}
+.folder-count{font-size:0.73rem;color:var(--muted);margin-top:2px}
+.leerling-banner{background:#fffbf0;border:1px solid #f0d080;border-radius:10px;padding:10px 16px;font-size:0.83rem;color:#7a5c00;margin-bottom:1.5rem;display:flex;align-items:center;gap:8px}
+.spinner-wrap{display:flex;align-items:center;justify-content:center;gap:10px;padding:2rem;color:var(--muted);font-size:0.9rem}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:3rem 2rem;color:var(--muted)}
+.empty-icon{font-size:2.5rem;margin-bottom:0.75rem;opacity:0.35}
+.progress-bar-wrap{width:100%;height:4px;background:var(--border);border-radius:2px;margin:8px 0}
+.progress-bar{height:4px;background:var(--accent2);border-radius:2px;transition:width 0.3s}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,0.4);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:14px;padding:1.75rem;width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal h3{font-family:'Playfair Display',serif;font-size:1.15rem;margin-bottom:1rem}
+.modal input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--ink);background:var(--paper);margin-bottom:10px;outline:none}
+.modal input:focus{border-color:var(--accent2)}
+.modal-btns{display:flex;gap:8px}
+.modal-btns button{flex:1;padding:9px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.88rem;cursor:pointer;font-weight:500}
+.btn-cancel{background:var(--paper);border:1px solid var(--border);color:var(--muted)}
+.btn-confirm{background:var(--accent);border:none;color:#fff}
+.btn-danger{background:var(--danger);border:none;color:#fff}
+.confirm-msg{font-size:0.9rem;color:var(--muted);margin-bottom:1rem;line-height:1.5}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-size:0.85rem;display:flex;align-items:center;gap:8px;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-icon{color:var(--accent2)}
+.dragging{opacity:0.4}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Wiskunde <span>met Walschap</span></div>
+  <div class="header-actions" id="header-actions">
+    <button class="btn-ghost" onclick="showLogin()">🔐 Beheer</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-top">
+      <span class="sidebar-title">Klassen</span>
+      <button class="btn-add-klas" id="btn-add-klas" onclick="openModal('klas')">+ Klas</button>
+    </div>
+    <div class="sidebar-scroll" id="sidebar-scroll"></div>
+  </nav>
+  <main id="main"></main>
+</div>
+<input type="file" id="file-input" multiple accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx">
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-icon">🔐</div>
+    <h2>Beheermodus</h2>
+    <p>Voer het wachtwoord in om bestanden te beheren.</p>
+    <input type="password" id="pw-input" placeholder="Wachtwoord" onkeydown="if(event.key==='Enter')tryLogin()">
+    <div class="login-error" id="login-error"></div>
+    <button class="btn-login" onclick="tryLogin()">Inloggen</button>
+    <button class="btn-cancel-login" onclick="hideLogin()">Annuleren</button>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
+<div class="toast" id="toast"><span class="toast-icon">✓</span><span id="toast-msg"></span></div>
+<script>
+const ADMIN_PW='WiskundeMetWalschap2026';
+const ROOT='/WiskundeMetWalschap';
+let isAdmin=false;
+
+// AUTH
+function showLogin(){document.getElementById('login-overlay').classList.add('show');document.getElementById('pw-input').value='';document.getElementById('login-error').textContent='';setTimeout(()=>document.getElementById('pw-input').focus(),100);}
+function hideLogin(){document.getElementById('login-overlay').classList.remove('show');}
+function tryLogin(){
+  if(document.getElementById('pw-input').value===ADMIN_PW){
+    isAdmin=true;hideLogin();
+    document.getElementById('header-actions').innerHTML=`<div class="admin-badge"><span class="admin-dot"></span>Beheermodus</div><button class="btn-ghost" onclick="logout()">Afmelden</button>`;
+    document.getElementById('btn-add-klas').classList.add('visible');
+    showToast('Welkom, Mr. Walschap!');render();
+  }else{
+    document.getElementById('login-error').textContent='Onjuist wachtwoord.';
+    document.getElementById('pw-input').classList.add('error');
+    document.getElementById('pw-input').value='';document.getElementById('pw-input').focus();
+  }
+}
+function logout(){isAdmin=false;document.getElementById('header-actions').innerHTML=`<button class="btn-ghost" onclick="showLogin()">🔐 Beheer</button>`;document.getElementById('btn-add-klas').classList.remove('visible');showToast('Afgemeld');render();}
+
+// API calls via Netlify Functions
+async function apiUpload(path,file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=async(e)=>{
+      const base64=e.target.result.split(',')[1];
+      const r=await fetch('/.netlify/functions/upload',{
+        method:'POST',
+        body:JSON.stringify({path,fileBase64:base64,fileName:file.name})
+      });
+      if(!r.ok){const err=await r.text();reject(new Error(err));}
+      else resolve(await r.json());
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function apiDownload(path,naam){
+  const r=await fetch('/.netlify/functions/download',{method:'POST',body:JSON.stringify({path})});
+  if(!r.ok) throw new Error('Download mislukt');
+  const blob=await r.blob();
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=naam;a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function apiList(path){
+  const r=await fetch('/.netlify/functions/list',{method:'POST',body:JSON.stringify({path})});
+  if(!r.ok) return [];
+  const d=await r.json();
+  return d.entries||[];
+}
+
+// DATA
+let DATA={klassen:[]};
+let nextId=1000;
+let expanded={};
+let sel={klasId:null,onderwerpId:null,submapId:null};
+let modalCb=null;
+let dragSrc=null;
+
+const STORAGE_KEY='wwdata_v3';
+function saveLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify({klassen:DATA.klassen,nextId}));}
+function loadLocal(){
+  try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(d){DATA=d;nextId=d.nextId||1000;}else setDefaults();}
+  catch(e){setDefaults();}
+}
+function setDefaults(){
+  DATA={klassen:[
+    {id:1,naam:'4de jaar',icon:'📘',onderwerpen:[
+      {id:11,naam:'Algebra',submappen:[{id:111,naam:'Theorie',bestanden:[]},{id:112,naam:'Oefeningen',bestanden:[]}]},
+      {id:12,naam:'Meetkunde',submappen:[{id:121,naam:'Theorie',bestanden:[]},{id:122,naam:'Oefeningen',bestanden:[]}]}
+    ]},
+    {id:2,naam:'5de jaar',icon:'📗',onderwerpen:[
+      {id:21,naam:'Limieten',submappen:[{id:211,naam:'Theorie',bestanden:[]},{id:212,naam:'Oefeningen',bestanden:[]},{id:213,naam:'Reflectie',bestanden:[]}]},
+      {id:22,naam:'Afgeleiden',submappen:[{id:221,naam:'Theorie',bestanden:[]},{id:222,naam:'Oefeningen',bestanden:[]}]},
+      {id:23,naam:'Integraalrekening',submappen:[{id:231,naam:'Theorie',bestanden:[]},{id:232,naam:'Oefeningen',bestanden:[]}]}
+    ]},
+    {id:3,naam:'7de jaar',icon:'📙',onderwerpen:[
+      {id:31,naam:'Statistiek',submappen:[{id:311,naam:'Theorie',bestanden:[]},{id:312,naam:'Oefeningen',bestanden:[]}]}
+    ]}
+  ]};nextId=500;
+}
+
+const findKlas=id=>DATA.klassen.find(k=>k.id===id);
+const findOnderwerp=(kid,oid)=>findKlas(kid)?.onderwerpen.find(o=>o.id===oid);
+const findSubmapGlobal=sid=>{for(const k of DATA.klassen)for(const o of k.onderwerpen){const s=o.submappen.find(s=>s.id===sid);if(s)return s;}};
+function findContext(sid){for(const k of DATA.klassen)for(const o of k.onderwerpen)for(const s of o.submappen)if(s.id===sid)return{klas:k,onderwerp:o,submap:s};return null;}
+function dbxPath(klas,onderwerp,submap,bestand=''){
+  const c=s=>s.replace(/[/\\?%*:|"<>]/g,'_');
+  let p=`${ROOT}/${c(klas.naam)}/${c(onderwerp.naam)}/${c(submap.naam)}`;
+  if(bestand)p+=`/${c(bestand)}`;
+  return p;
+}
+
+// SIDEBAR
+function renderSidebar(){
+  const el=document.getElementById('sidebar-scroll');
+  let html='';
+  DATA.klassen.forEach(k=>{
+    const isExp=expanded[k.id];const isAct=sel.klasId===k.id&&!sel.onderwerpId;
+    html+=`<div class="klas-block"><div class="klas-row ${isAct?'active':''}" onclick="toggleKlas(${k.id})">
+      <span class="klas-icon">${k.icon}</span><span class="klas-name">${k.naam}</span>
+      ${isAdmin?`<span class="klas-acts"><button class="icon-btn" onclick="event.stopPropagation();openModal('renameKlas',${k.id})">✏️</button><button class="icon-btn danger" onclick="event.stopPropagation();confirmDelete('klas',${k.id})">🗑</button></span>`:''}
+      <span class="klas-chevron ${isExp?'open':''}">▶</span></div>`;
+    if(isExp){
+      html+=`<div class="onderwerp-list">`;
+      k.onderwerpen.forEach(o=>{
+        const isOAct=sel.onderwerpId===o.id;
+        html+=`<div class="onderwerp-row ${isOAct?'active':''}" ${isAdmin?`draggable="true" ondragstart="dragStart(event,${k.id},${o.id})" ondragover="dragOver(event)" ondrop="dragDrop(event,${k.id},${o.id})" ondragend="dragEnd()" id="orow-${o.id}"`:''}
+          onclick="selectOnderwerp(${k.id},${o.id})">
+          ${isAdmin?`<span class="drag-handle">⠿</span>`:''}
+          <span class="onderwerp-dot"></span><span class="onderwerp-name">${o.naam}</span>
+          ${isAdmin?`<span class="o-acts"><button class="icon-btn" onclick="event.stopPropagation();openModal('renameOnderwerp',${k.id},${o.id})">✏️</button><button class="icon-btn danger" onclick="event.stopPropagation();confirmDelete('onderwerp',${k.id},${o.id})">🗑</button></span>`:''}
+        </div>`;
+      });
+      if(isAdmin)html+=`<button class="add-o-btn visible" onclick="openModal('onderwerp',${k.id})">+ Onderwerp toevoegen</button>`;
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+}
+
+// DRAG
+function dragStart(e,kid,oid){dragSrc={kid,oid};setTimeout(()=>document.getElementById('orow-'+oid)?.classList.add('dragging'),0);}
+function dragOver(e){e.preventDefault();}
+function dragDrop(e,kid,oid){e.preventDefault();if(!dragSrc||dragSrc.oid===oid||dragSrc.kid!==kid)return;const k=findKlas(kid);const fi=k.onderwerpen.findIndex(o=>o.id===dragSrc.oid);const ti=k.onderwerpen.findIndex(o=>o.id===oid);const[m]=k.onderwerpen.splice(fi,1);k.onderwerpen.splice(ti,0,m);saveLocal();render();}
+function dragEnd(){document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));dragSrc=null;}
+
+// MAIN
+function renderMain(){
+  const main=document.getElementById('main');
+  if(!sel.klasId){
+    let html=`<div class="welcome"><div class="welcome-title">${isAdmin?'Welkom, Mr. Walschap 👋':'Wiskunde met Walschap'}</div>
+      <p class="welcome-sub">${isAdmin?'Beheermodus actief.':'Kies een klas om oefeningen te bekijken en te downloaden.'}</p>
+      <div class="klas-grid">`;
+    DATA.klassen.forEach(k=>{
+      const count=k.onderwerpen.reduce((a,o)=>a+o.submappen.reduce((b,s)=>b+s.bestanden.length,0),0);
+      html+=`<div class="klas-card" onclick="toggleKlas(${k.id})"><div class="klas-card-icon">${k.icon}</div><div class="klas-card-name">${k.naam}</div><div class="klas-card-count">${count} bestand${count!==1?'en':''}</div></div>`;
+    });
+    html+=`</div></div>`;main.innerHTML=html;return;
+  }
+  const klas=findKlas(sel.klasId);
+  if(!sel.onderwerpId){
+    let html=`<div class="breadcrumb"><span class="crumb" onclick="goHome()">Startpagina</span> › <span>${klas.icon} ${klas.naam}</span></div>
+      <h1 class="page-title">${klas.naam}</h1><p class="page-sub">Kies een onderwerp</p>
+      ${!isAdmin?`<div class="leerling-banner">📖 Je kan alle bestanden bekijken en downloaden.</div>`:''}
+      <div class="folder-grid">`;
+    klas.onderwerpen.forEach(o=>{
+      const count=o.submappen.reduce((a,s)=>a+s.bestanden.length,0);
+      html+=`<div class="folder-card" onclick="selectOnderwerp(${klas.id},${o.id})">
+        ${isAdmin?`<button class="del-btn" style="display:block" onclick="event.stopPropagation();confirmDelete('onderwerp',${klas.id},${o.id})">✕</button>`:''}
+        <div class="folder-icon">📂</div><div class="folder-name">${o.naam}</div><div class="folder-count">${count} bestand${count!==1?'en':''}</div></div>`;
+    });
+    html+=`</div>`;
+    if(isAdmin)html+=`<button style="font-size:0.88rem;padding:8px 14px;border:1px dashed var(--border);border-radius:8px;background:none;cursor:pointer;color:var(--muted);font-family:DM Sans,sans-serif" onclick="openModal('onderwerp',${klas.id})">+ Onderwerp toevoegen</button>`;
+    main.innerHTML=html;return;
+  }
+  const onderwerp=findOnderwerp(sel.klasId,sel.onderwerpId);
+  if(!sel.submapId||!onderwerp.submappen.find(s=>s.id===sel.submapId))sel.submapId=onderwerp.submappen[0]?.id||null;
+  const submap=onderwerp.submappen.find(s=>s.id===sel.submapId);
+  let html=`<div class="breadcrumb"><span class="crumb" onclick="goHome()">Startpagina</span> › <span class="crumb" onclick="selectKlas(${klas.id})">${klas.icon} ${klas.naam}</span> › <span>${onderwerp.naam}</span></div>
+    <h1 class="page-title">${onderwerp.naam}</h1><p class="page-sub">${klas.naam}</p>
+    ${!isAdmin?`<div class="leerling-banner">📖 Klik op een bestand om het te downloaden.</div>`:''}
+    <div class="submap-tabs">`;
+  onderwerp.submappen.forEach(s=>{
+    html+=`<div class="submap-tab ${sel.submapId===s.id?'active':''}" onclick="selectSubmap(${s.id})">${s.naam}<span class="tab-count">${s.bestanden.length}</span></div>`;
+  });
+  if(isAdmin)html+=`<button class="btn-add-sub visible" onclick="openModal('submap',${klas.id},${onderwerp.id})">+ Submap</button>`;
+  html+=`</div>`;
+  if(submap){
+    if(submap.bestanden.length>0){
+      html+=`<button class="download-all-btn" onclick="downloadAll(${submap.id})">↓ Alles downloaden (${submap.bestanden.length})</button>`;
+      html+=`<div class="section-label">Bestanden in "${submap.naam}"</div><div class="files-grid">`;
+      submap.bestanden.forEach(f=>{
+        const icon=f.type==='pdf'?'📄':f.type==='img'?'🖼️':f.type==='ppt'?'📊':'📝';
+        html+=`<div class="file-card" onclick="downloadFile('${f.path}','${f.naam}')">
+          ${isAdmin?`<button class="del-btn" style="display:block" onclick="event.stopPropagation();deleteFile(${submap.id},${f.id},'${f.path}')">✕</button>`:''}
+          <div class="dl-badge">↓</div><div class="file-icon">${icon}</div>
+          <div class="file-name">${f.naam}</div><div class="file-date">${f.datum}</div></div>`;
+      });
+      html+=`</div>`;
+    }else{
+      html+=`<div class="empty"><div class="empty-icon">📂</div><p>${isAdmin?'Nog geen bestanden. Upload hieronder.':'Nog geen bestanden in deze map.'}</p></div>`;
+    }
+    if(isAdmin){
+      html+=`<div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event,${submap.id})">
+        <div class="upload-icon">☁</div>
+        <p><strong>${submap.bestanden.length>0?'Meer bestanden toevoegen':'Bestanden toevoegen'}</strong></p>
+        <p>PDF, Word, PowerPoint, afbeeldingen</p></div>`;
+      document.getElementById('file-input').onchange=(e)=>handleUpload(e,submap.id);
+    }
+  }
+  main.innerHTML=html;
+}
+
+function render(){renderSidebar();renderMain();}
+
+// NAV
+function goHome(){sel={klasId:null,onderwerpId:null,submapId:null};render();}
+function toggleKlas(id){if(expanded[id]&&sel.klasId===id&&!sel.onderwerpId){expanded[id]=false;sel={klasId:null,onderwerpId:null,submapId:null};}else{expanded[id]=!expanded[id];sel.klasId=id;sel.onderwerpId=null;sel.submapId=null;}render();}
+function selectKlas(id){sel.klasId=id;sel.onderwerpId=null;sel.submapId=null;expanded[id]=true;render();}
+function selectOnderwerp(kid,oid){sel.klasId=kid;sel.onderwerpId=oid;expanded[kid]=true;sel.submapId=null;render();}
+function selectSubmap(sid){sel.submapId=sid;render();}
+
+// UPLOAD
+async function handleUpload(e,sid){const files=Array.from(e.target.files);e.target.value='';if(!files.length)return;await uploadFiles(files,sid);}
+async function handleDrop(e,sid){e.preventDefault();document.getElementById('upload-zone')?.classList.remove('drag');await uploadFiles(Array.from(e.dataTransfer.files),sid);}
+async function uploadFiles(files,sid){
+  const ctx=findContext(sid);if(!ctx)return;
+  const today=new Date();
+  const d=`${today.getDate().toString().padStart(2,'0')}/${(today.getMonth()+1).toString().padStart(2,'0')}/${today.getFullYear()}`;
+  let done=0;
+  showToast(`0/${files.length} uploaden...`);
+  for(const file of files){
+    try{
+      const path=dbxPath(ctx.klas,ctx.onderwerp,ctx.submap,file.name);
+      await apiUpload(path,file);
+      const ext=file.name.split('.').pop().toLowerCase();
+      const type=ext==='pdf'?'pdf':['png','jpg','jpeg'].includes(ext)?'img':['ppt','pptx'].includes(ext)?'ppt':'doc';
+      ctx.submap.bestanden.push({id:nextId++,naam:file.name,type,datum:d,path});
+      done++;showToast(`${done}/${files.length} geüpload...`);
+    }catch(err){showToast(`Fout: ${file.name}`);}
+  }
+  saveLocal();showToast(`${done} bestand${done!==1?'en':''} geüpload naar Dropbox!`);render();
+}
+
+// DOWNLOAD
+async function downloadFile(path,naam){
+  try{showToast(`"${naam}" downloaden...`);await apiDownload(path,naam);showToast(`"${naam}" gedownload!`);}
+  catch(e){showToast('Download mislukt.');}
+}
+async function downloadAll(sid){
+  const s=findSubmapGlobal(sid);if(!s||!s.bestanden.length)return;
+  showToast(`${s.bestanden.length} bestanden downloaden...`);
+  for(const f of s.bestanden)await downloadFile(f.path,f.naam);
+}
+
+// DELETE
+async function deleteFile(sid,fid,path){
+  const s=findSubmapGlobal(sid);if(!s)return;
+  try{
+    await fetch('/.netlify/functions/upload',{method:'POST',body:JSON.stringify({path:'__delete__',fileBase64:'',fileName:path})});
+    s.bestanden=s.bestanden.filter(f=>f.id!==fid);
+    saveLocal();showToast('Bestand verwijderd');render();
+  }catch(e){
+    s.bestanden=s.bestanden.filter(f=>f.id!==fid);
+    saveLocal();showToast('Bestand verwijderd');render();
+  }
+}
+
+// MODAL
+function openModal(type,a1,a2){
+  const ov=document.getElementById('modal-overlay');
+  document.getElementById('modal-overlay').classList.add('show');
+  const t=document.getElementById('modal-title');
+  const b=document.getElementById('modal-body');
+  const bt=document.getElementById('modal-btns');
+  const std=`<button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-confirm" onclick="confirmModal()">Toevoegen</button>`;
+  const sav=`<button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-confirm" onclick="confirmModal()">Opslaan</button>`;
+  if(type==='klas'){t.textContent='Nieuwe klas';b.innerHTML=`<input id="modal-input" placeholder="bv. 3de jaar...">`;bt.innerHTML=std;
+    modalCb=()=>{const v=document.getElementById('modal-input').value.trim();if(!v)return false;const icons=['📘','📗','📙','📕','📓','📔'];const id=nextId++;DATA.klassen.push({id,naam:v,icon:icons[DATA.klassen.length%icons.length],onderwerpen:[]});expanded[id]=true;sel.klasId=id;sel.onderwerpId=null;sel.submapId=null;saveLocal();showToast(`Klas "${v}" toegevoegd`);return true;};}
+  else if(type==='renameKlas'){const k=findKlas(a1);t.textContent='Klas hernoemen';b.innerHTML=`<input id="modal-input" value="${k.naam}">`;bt.innerHTML=sav;
+    modalCb=()=>{const v=document.getElementById('modal-input').value.trim();if(!v)return false;k.naam=v;saveLocal();showToast('Klas hernoemd');return true;};}
+  else if(type==='onderwerp'){t.textContent='Nieuw onderwerp';b.innerHTML=`<input id="modal-input" placeholder="bv. Integraalrekening...">`;bt.innerHTML=std;
+    modalCb=()=>{const v=document.getElementById('modal-input').value.trim();if(!v)return false;const k=findKlas(a1);const id=nextId++;k.onderwerpen.push({id,naam:v,submappen:[{id:nextId++,naam:'Theorie',bestanden:[]},{id:nextId++,naam:'Oefeningen',bestanden:[]}]});sel.klasId=a1;sel.onderwerpId=id;sel.submapId=null;expanded[a1]=true;saveLocal();showToast(`Onderwerp "${v}" toegevoegd`);return true;};}
+  else if(type==='renameOnderwerp'){const o=findOnderwerp(a1,a2);t.textContent='Onderwerp hernoemen';b.innerHTML=`<input id="modal-input" value="${o.naam}">`;bt.innerHTML=sav;
+    modalCb=()=>{const v=document.getElementById('modal-input').value.trim();if(!v)return false;o.naam=v;saveLocal();showToast('Onderwerp hernoemd');return true;};}
+  else if(type==='submap'){t.textContent='Nieuwe submap';b.innerHTML=`<input id="modal-input" placeholder="bv. Reflectie, Toets...">`;bt.innerHTML=std;
+    modalCb=()=>{const v=document.getElementById('modal-input').value.trim();if(!v)return false;const o=findOnderwerp(a1,a2);const id=nextId++;o.submappen.push({id,naam:v,bestanden:[]});sel.submapId=id;saveLocal();showToast(`Submap "${v}" toegevoegd`);return true;};}
+  setTimeout(()=>{const i=document.getElementById('modal-input');if(i){i.focus();i.select();i.onkeydown=e=>{if(e.key==='Enter')confirmModal();};}},50);
+}
+function confirmDelete(type,a1,a2){
+  document.getElementById('modal-overlay').classList.add('show');
+  const naam=type==='klas'?findKlas(a1).naam:findOnderwerp(a1,a2).naam;
+  document.getElementById('modal-title').textContent=type==='klas'?'Klas verwijderen':'Onderwerp verwijderen';
+  document.getElementById('modal-body').innerHTML=`<p class="confirm-msg">Ben je zeker dat je <strong>${naam}</strong> wil verwijderen?</p>`;
+  document.getElementById('modal-btns').innerHTML=`<button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-danger" onclick="doDelete('${type}',${a1},${a2||0})">Verwijderen</button>`;
+}
+function doDelete(type,a1,a2){closeModal();if(type==='klas'){DATA.klassen=DATA.klassen.filter(k=>k.id!==a1);if(sel.klasId===a1)sel={klasId:null,onderwerpId:null,submapId:null};showToast('Klas verwijderd');}else{const k=findKlas(a1);k.onderwerpen=k.onderwerpen.filter(o=>o.id!==a2);if(sel.onderwerpId===a2){sel.onderwerpId=null;sel.submapId=null;}showToast('Onderwerp verwijderd');}saveLocal();render();}
+function confirmModal(){if(modalCb&&modalCb()!==false){closeModal();render();}}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('show');modalCb=null;}
+
+// TOAST
+let toastTimer;
+function showToast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);}
+
+loadLocal();render();
+</script>
+</body>
+</html>
