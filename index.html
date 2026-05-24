@@ -316,9 +316,34 @@ function renderSidebar(){
   el.innerHTML=html;
 }
 
-function dragStart(e,kid,oid){dragSrc={kid,oid};setTimeout(()=>document.getElementById('orow-'+oid)?.classList.add('dragging'),0);}
+function dragStart(e,kid,oid){
+  if(oid){dragSrc={type:'onderwerp',kid,oid};}
+  else{dragSrc={type:'klas',kid};}
+  setTimeout(()=>{
+    const el=document.getElementById(oid?'orow-'+oid:'krow-'+kid);
+    el?.classList.add('dragging');
+  },0);
+}
 function dragOver(e){e.preventDefault();}
-function dragDrop(e,kid,oid){e.preventDefault();if(!dragSrc||dragSrc.oid===oid||dragSrc.kid!==kid)return;const k=findKlas(kid);const fi=k.onderwerpen.findIndex(o=>o.id===dragSrc.oid);const ti=k.onderwerpen.findIndex(o=>o.id===oid);const[m]=k.onderwerpen.splice(fi,1);k.onderwerpen.splice(ti,0,m);saveLocal();render();}
+function dragDrop(e,kid,oid){
+  e.preventDefault();
+  if(!dragSrc)return;
+  if(dragSrc.type==='onderwerp'&&oid){
+    if(dragSrc.oid===oid||dragSrc.kid!==kid)return;
+    const k=findKlas(kid);
+    const fi=k.onderwerpen.findIndex(o=>o.id===dragSrc.oid);
+    const ti=k.onderwerpen.findIndex(o=>o.id===oid);
+    const[m]=k.onderwerpen.splice(fi,1);
+    k.onderwerpen.splice(ti,0,m);
+  } else if(dragSrc.type==='klas'&&!oid){
+    if(dragSrc.kid===kid)return;
+    const fi=DATA.klassen.findIndex(k=>k.id===dragSrc.kid);
+    const ti=DATA.klassen.findIndex(k=>k.id===kid);
+    const[m]=DATA.klassen.splice(fi,1);
+    DATA.klassen.splice(ti,0,m);
+  }
+  saveLocal();render();
+}
 function dragEnd(){document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));dragSrc=null;}
 
 function renderMain(){
