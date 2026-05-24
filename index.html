@@ -140,6 +140,19 @@ main{flex:1;padding:2rem 2.5rem;overflow-y:auto;max-width:900px}
 .toast.show{transform:translateY(0);opacity:1}
 .toast-icon{color:var(--accent2)}
 .dragging{opacity:0.4}
+.search-bar{padding:12px 1.5rem;border-bottom:1px solid var(--border);background:var(--card)}
+.search-input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--paper);outline:none;transition:border-color 0.2s}
+.search-input:focus{border-color:var(--accent2)}
+.search-wrap{position:relative}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none}
+.search-results{padding:1.5rem 2.5rem;max-width:900px}
+.search-result-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;cursor:pointer;transition:background 0.15s;border:1px solid var(--border);background:var(--card);margin-bottom:8px}
+.search-result-item:hover{border-color:var(--accent2);transform:translateY(-1px)}
+.search-result-icon{font-size:1.5rem;flex-shrink:0}
+.search-result-info{flex:1}
+.search-result-name{font-size:0.88rem;font-weight:500;color:var(--ink)}
+.search-result-path{font-size:0.75rem;color:var(--muted);margin-top:2px}
+.search-empty{text-align:center;padding:2rem;color:var(--muted);font-size:0.9rem}
 </style>
 </head>
 <body>
