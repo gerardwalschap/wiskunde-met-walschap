@@ -115,13 +115,8 @@ main{flex:1;padding:2rem 2.5rem;overflow-y:auto;max-width:900px}
 .folder-name{font-size:0.83rem;font-weight:500}
 .folder-count{font-size:0.73rem;color:var(--muted);margin-top:2px}
 .leerling-banner{background:#fffbf0;border:1px solid #f0d080;border-radius:10px;padding:10px 16px;font-size:0.83rem;color:#7a5c00;margin-bottom:1.5rem;display:flex;align-items:center;gap:8px}
-.spinner-wrap{display:flex;align-items:center;justify-content:center;gap:10px;padding:2rem;color:var(--muted);font-size:0.9rem}
-.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 .empty{text-align:center;padding:3rem 2rem;color:var(--muted)}
 .empty-icon{font-size:2.5rem;margin-bottom:0.75rem;opacity:0.35}
-.progress-bar-wrap{width:100%;height:4px;background:var(--border);border-radius:2px;margin:8px 0}
-.progress-bar{height:4px;background:var(--accent2);border-radius:2px;transition:width 0.3s}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,0.4);z-index:200;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
 .modal{background:var(--card);border-radius:14px;padding:1.75rem;width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
@@ -179,10 +174,12 @@ main{flex:1;padding:2rem 2.5rem;overflow-y:auto;max-width:900px}
 <div class="toast" id="toast"><span class="toast-icon">✓</span><span id="toast-msg"></span></div>
 <script>
 const ADMIN_PW='WiskundeMetWalschap2026';
-const ROOT='';
+const SUPABASE_URL='https://uawwrtqznncylnbwmajt.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhd3dydHF6bm5jeWxuYndtYWp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1Nzk1MTEsImV4cCI6MjA5NTE1NTUxMX0.9e_LPfgV_RXHGUpCylpwJBn7VSyOARnn0wvmWk0KuFA';
+const BUCKET='bestanden';
+
 let isAdmin=false;
 
-// AUTH
 function showLogin(){document.getElementById('login-overlay').classList.add('show');document.getElementById('pw-input').value='';document.getElementById('login-error').textContent='';setTimeout(()=>document.getElementById('pw-input').focus(),100);}
 function hideLogin(){document.getElementById('login-overlay').classList.remove('show');}
 function tryLogin(){
@@ -199,25 +196,20 @@ function tryLogin(){
 }
 function logout(){isAdmin=false;document.getElementById('header-actions').innerHTML=`<button class="btn-ghost" onclick="showLogin()">🔐 Beheer</button>`;document.getElementById('btn-add-klas').classList.remove('visible');showToast('Afgemeld');render();}
 
-// API calls via Netlify Functions
-async function apiUpload(path,file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=async(e)=>{
-      const base64=e.target.result.split(',')[1];
-      const r=await fetch('/.netlify/functions/upload',{
-        method:'POST',
-        body:JSON.stringify({path,fileBase64:base64,fileName:file.name})
-      });
-      if(!r.ok){const err=await r.text();reject(new Error(err));}
-      else resolve(await r.json());
-    };
-    reader.readAsDataURL(file);
+async function uploadToSupabase(path,file){
+  const r=await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`,{
+    method:'POST',
+    headers:{'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':file.type||'application/octet-stream','x-upsert':'true'},
+    body:file
   });
+  if(!r.ok){const e=await r.text();throw new Error(e);}
+  return r.json();
 }
 
-async function apiDownload(path,naam){
-  const r=await fetch('/.netlify/functions/download',{method:'POST',body:JSON.stringify({path})});
+async function downloadFromSupabase(path,naam){
+  const r=await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`,{
+    headers:{'Authorization':`Bearer ${SUPABASE_KEY}`}
+  });
   if(!r.ok) throw new Error('Download mislukt');
   const blob=await r.blob();
   const url=URL.createObjectURL(blob);
@@ -225,14 +217,13 @@ async function apiDownload(path,naam){
   URL.revokeObjectURL(url);
 }
 
-async function apiList(path){
-  const r=await fetch('/.netlify/functions/list',{method:'POST',body:JSON.stringify({path})});
-  if(!r.ok) return [];
-  const d=await r.json();
-  return d.entries||[];
+async function deleteFromSupabase(path){
+  await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`,{
+    method:'DELETE',
+    headers:{'Authorization':`Bearer ${SUPABASE_KEY}`}
+  });
 }
 
-// DATA
 let DATA={klassen:[]};
 let nextId=1000;
 let expanded={};
@@ -240,7 +231,7 @@ let sel={klasId:null,onderwerpId:null,submapId:null};
 let modalCb=null;
 let dragSrc=null;
 
-const STORAGE_KEY='wwdata_v3';
+const STORAGE_KEY='wwdata_v4';
 function saveLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify({klassen:DATA.klassen,nextId}));}
 function loadLocal(){
   try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(d){DATA=d;nextId=d.nextId||1000;}else setDefaults();}
@@ -267,14 +258,10 @@ const findKlas=id=>DATA.klassen.find(k=>k.id===id);
 const findOnderwerp=(kid,oid)=>findKlas(kid)?.onderwerpen.find(o=>o.id===oid);
 const findSubmapGlobal=sid=>{for(const k of DATA.klassen)for(const o of k.onderwerpen){const s=o.submappen.find(s=>s.id===sid);if(s)return s;}};
 function findContext(sid){for(const k of DATA.klassen)for(const o of k.onderwerpen)for(const s of o.submappen)if(s.id===sid)return{klas:k,onderwerp:o,submap:s};return null;}
-function dbxPath(klas,onderwerp,submap,bestand=''){
+function sbPath(klas,onderwerp,submap,bestand){
   const c=s=>s.replace(/[/\\?%*:|"<>]/g,'_');
-  let p=`${ROOT}/${c(klas.naam)}/${c(onderwerp.naam)}/${c(submap.naam)}`;
-  if(bestand)p+=`/${c(bestand)}`;
-  return p;
+  return `${c(klas.naam)}/${c(onderwerp.naam)}/${c(submap.naam)}/${c(bestand)}`;
 }
-
-// SIDEBAR
 function renderSidebar(){
   const el=document.getElementById('sidebar-scroll');
   let html='';
@@ -303,13 +290,11 @@ function renderSidebar(){
   el.innerHTML=html;
 }
 
-// DRAG
 function dragStart(e,kid,oid){dragSrc={kid,oid};setTimeout(()=>document.getElementById('orow-'+oid)?.classList.add('dragging'),0);}
 function dragOver(e){e.preventDefault();}
 function dragDrop(e,kid,oid){e.preventDefault();if(!dragSrc||dragSrc.oid===oid||dragSrc.kid!==kid)return;const k=findKlas(kid);const fi=k.onderwerpen.findIndex(o=>o.id===dragSrc.oid);const ti=k.onderwerpen.findIndex(o=>o.id===oid);const[m]=k.onderwerpen.splice(fi,1);k.onderwerpen.splice(ti,0,m);saveLocal();render();}
 function dragEnd(){document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));dragSrc=null;}
 
-// MAIN
 function renderMain(){
   const main=document.getElementById('main');
   if(!sel.klasId){
@@ -380,17 +365,15 @@ function renderMain(){
 }
 
 function render(){renderSidebar();renderMain();}
-
-// NAV
 function goHome(){sel={klasId:null,onderwerpId:null,submapId:null};render();}
 function toggleKlas(id){if(expanded[id]&&sel.klasId===id&&!sel.onderwerpId){expanded[id]=false;sel={klasId:null,onderwerpId:null,submapId:null};}else{expanded[id]=!expanded[id];sel.klasId=id;sel.onderwerpId=null;sel.submapId=null;}render();}
 function selectKlas(id){sel.klasId=id;sel.onderwerpId=null;sel.submapId=null;expanded[id]=true;render();}
 function selectOnderwerp(kid,oid){sel.klasId=kid;sel.onderwerpId=oid;expanded[kid]=true;sel.submapId=null;render();}
 function selectSubmap(sid){sel.submapId=sid;render();}
 
-// UPLOAD
 async function handleUpload(e,sid){const files=Array.from(e.target.files);e.target.value='';if(!files.length)return;await uploadFiles(files,sid);}
 async function handleDrop(e,sid){e.preventDefault();document.getElementById('upload-zone')?.classList.remove('drag');await uploadFiles(Array.from(e.dataTransfer.files),sid);}
+
 async function uploadFiles(files,sid){
   const ctx=findContext(sid);if(!ctx)return;
   const today=new Date();
@@ -399,44 +382,36 @@ async function uploadFiles(files,sid){
   showToast(`0/${files.length} uploaden...`);
   for(const file of files){
     try{
-      const path=dbxPath(ctx.klas,ctx.onderwerp,ctx.submap,file.name);
-      await apiUpload(path,file);
+      const path=sbPath(ctx.klas,ctx.onderwerp,ctx.submap,file.name);
+      await uploadToSupabase(path,file);
       const ext=file.name.split('.').pop().toLowerCase();
       const type=ext==='pdf'?'pdf':['png','jpg','jpeg'].includes(ext)?'img':['ppt','pptx'].includes(ext)?'ppt':'doc';
       ctx.submap.bestanden.push({id:nextId++,naam:file.name,type,datum:d,path});
       done++;showToast(`${done}/${files.length} geüpload...`);
-    }catch(err){showToast(`Fout: ${file.name}`);}
+    }catch(err){showToast(`Fout: ${file.name} - ${err.message}`);}
   }
-  saveLocal();showToast(`${done} bestand${done!==1?'en':''} geüpload naar Dropbox!`);render();
+  saveLocal();showToast(`${done} bestand${done!==1?'en':''} geüpload!`);render();
 }
 
-// DOWNLOAD
 async function downloadFile(path,naam){
-  try{showToast(`"${naam}" downloaden...`);await apiDownload(path,naam);showToast(`"${naam}" gedownload!`);}
+  try{showToast(`"${naam}" downloaden...`);await downloadFromSupabase(path,naam);showToast(`"${naam}" gedownload!`);}
   catch(e){showToast('Download mislukt.');}
 }
 async function downloadAll(sid){
   const s=findSubmapGlobal(sid);if(!s||!s.bestanden.length)return;
-  showToast(`${s.bestanden.length} bestanden downloaden...`);
   for(const f of s.bestanden)await downloadFile(f.path,f.naam);
 }
 
-// DELETE
 async function deleteFile(sid,fid,path){
   const s=findSubmapGlobal(sid);if(!s)return;
   try{
-    await fetch('/.netlify/functions/upload',{method:'POST',body:JSON.stringify({path:'__delete__',fileBase64:'',fileName:path})});
+    await deleteFromSupabase(path);
     s.bestanden=s.bestanden.filter(f=>f.id!==fid);
     saveLocal();showToast('Bestand verwijderd');render();
-  }catch(e){
-    s.bestanden=s.bestanden.filter(f=>f.id!==fid);
-    saveLocal();showToast('Bestand verwijderd');render();
-  }
+  }catch(e){showToast('Verwijderen mislukt.');}
 }
 
-// MODAL
 function openModal(type,a1,a2){
-  const ov=document.getElementById('modal-overlay');
   document.getElementById('modal-overlay').classList.add('show');
   const t=document.getElementById('modal-title');
   const b=document.getElementById('modal-body');
@@ -455,6 +430,7 @@ function openModal(type,a1,a2){
     modalCb=()=>{const v=document.getElementById('modal-input').value.trim();if(!v)return false;const o=findOnderwerp(a1,a2);const id=nextId++;o.submappen.push({id,naam:v,bestanden:[]});sel.submapId=id;saveLocal();showToast(`Submap "${v}" toegevoegd`);return true;};}
   setTimeout(()=>{const i=document.getElementById('modal-input');if(i){i.focus();i.select();i.onkeydown=e=>{if(e.key==='Enter')confirmModal();};}},50);
 }
+
 function confirmDelete(type,a1,a2){
   document.getElementById('modal-overlay').classList.add('show');
   const naam=type==='klas'?findKlas(a1).naam:findOnderwerp(a1,a2).naam;
@@ -466,7 +442,6 @@ function doDelete(type,a1,a2){closeModal();if(type==='klas'){DATA.klassen=DATA.k
 function confirmModal(){if(modalCb&&modalCb()!==false){closeModal();render();}}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('show');modalCb=null;}
 
-// TOAST
 let toastTimer;
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);}
 
