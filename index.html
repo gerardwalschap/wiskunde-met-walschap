@@ -471,6 +471,44 @@ function closeModal(){document.getElementById('modal-overlay').classList.remove(
 let toastTimer;
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);}
 
+function handleSearch(query){
+  const q=query.toLowerCase().trim();
+  if(!q){document.getElementById('search-results-container')?.remove();renderMain();return;}
+  const results=[];
+  DATA.klassen.forEach(k=>{
+    k.onderwerpen.forEach(o=>{
+      o.submappen.forEach(s=>{
+        s.bestanden.forEach(f=>{
+          if(f.naam.toLowerCase().includes(q)||o.naam.toLowerCase().includes(q)||k.naam.toLowerCase().includes(q)||s.naam.toLowerCase().includes(q)){
+            results.push({bestand:f,submap:s,onderwerp:o,klas:k});
+          }
+        });
+      });
+    });
+  });
+  const main=document.getElementById('main');
+  const icon=f=>f.type==='pdf'?'📄':f.type==='img'?'🖼️':f.type==='ppt'?'📊':'📝';
+  let html=`<div class="search-results" id="search-results-container">
+    <h1 class="page-title" style="margin-bottom:0.5rem">Zoekresultaten</h1>
+    <p class="page-sub">${results.length} resultaat${results.length!==1?'en':''} voor "<strong>${query}</strong>"</p>`;
+  if(results.length===0){
+    html+=`<div class="search-empty">😕 Geen bestanden gevonden voor "${query}"</div>`;
+  } else {
+    results.forEach(r=>{
+      html+=`<div class="search-result-item" onclick="downloadFile('${r.bestand.path}','${r.bestand.naam}')">
+        <div class="search-result-icon">${icon(r.bestand)}</div>
+        <div class="search-result-info">
+          <div class="search-result-name">${r.bestand.naam}</div>
+          <div class="search-result-path">${r.klas.naam} › ${r.onderwerp.naam} › ${r.submap.naam}</div>
+        </div>
+        <div style="color:var(--muted);font-size:0.75rem">${r.bestand.datum}</div>
+      </div>`;
+    });
+  }
+  html+=`</div>`;
+  main.innerHTML=html;
+}
+
 loadLocal();render();
 </script>
 </body>
