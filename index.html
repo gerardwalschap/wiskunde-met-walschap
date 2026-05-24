@@ -293,7 +293,8 @@ function renderSidebar(){
   let html='';
   DATA.klassen.forEach(k=>{
     const isExp=expanded[k.id];const isAct=sel.klasId===k.id&&!sel.onderwerpId;
-    html+=`<div class="klas-block"><div class="klas-row ${isAct?'active':''}" onclick="toggleKlas(${k.id})">
+    html+=`<div class="klas-block" id="krow-${k.id}" ${isAdmin?`draggable="true" ondragstart="dragStart(event,${k.id},null)" ondragover="dragOver(event)" ondrop="dragDrop(event,${k.id},null)" ondragend="dragEnd()"`:''}>
+<div class="klas-row ${isAct?'active':''}" onclick="toggleKlas(${k.id})">
       <span class="klas-icon">${k.icon}</span><span class="klas-name">${k.naam}</span>
       ${isAdmin?`<span class="klas-acts"><button class="icon-btn" onclick="event.stopPropagation();openModal('renameKlas',${k.id})">✏️</button><button class="icon-btn danger" onclick="event.stopPropagation();confirmDelete('klas',${k.id})">🗑</button></span>`:''}
       <span class="klas-chevron ${isExp?'open':''}">▶</span></div>`;
