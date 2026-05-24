@@ -1,15 +1,20 @@
+const { getStore } = require('@netlify/blobs');
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   try {
-    const { getStore } = require('@netlify/blobs');
-    
+    const { path, fileBase64, fileName } = JSON.parse(event.body);
+    const store = getStore('bestanden');
+    const fileBuffer = Buffer.from(fileBase64, 'base64');
+    await store.set(path, fileBuffer);
+
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ success: true, blobsLoaded: true })
+      body: JSON.stringify({ success: true, path })
     };
   } catch (e) {
     return {
