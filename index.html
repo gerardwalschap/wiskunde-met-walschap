@@ -168,7 +168,13 @@ main{flex:1;padding:2rem 2.5rem;overflow-y:auto;max-width:900px}
       <span class="sidebar-title">Klassen</span>
       <button class="btn-add-klas" id="btn-add-klas" onclick="openModal('klas')">+ Klas</button>
     </div>
-    <div class="sidebar-scroll" id="sidebar-scroll"></div>
+    <div class="search-bar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="search-input" type="text" placeholder="Zoeken op bestand, onderwerp of klas..." oninput="handleSearch(this.value)">
+  </div>
+</div>
+<div class="sidebar-scroll" id="sidebar-scroll"></div>
   </nav>
   <main id="main"></main>
 </div>
