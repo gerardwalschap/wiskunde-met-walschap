@@ -258,10 +258,45 @@ let modalCb=null;
 let dragSrc=null;
 
 const STORAGE_KEY='wwdata_v4';
-function saveLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify({klassen:DATA.klassen,nextId}));}
-function loadLocal(){
-  try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(d){DATA=d;nextId=d.nextId||1000;}else setDefaults();}
-  catch(e){setDefaults();}
+
+async function saveLocal(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify({klassen:DATA.klassen,nextId}));
+  try{
+    await fetch(`${SUPABASE_URL}/rest/v1/structuur?id=eq.1`,{
+      method:'PATCH',
+      headers:{'Authorization':`Bearer ${SUPABASE_KEY}`,'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({data:JSON.stringify({klassen:DATA.klassen,nextId})})
+    });
+  }catch(e){}
+}
+
+async function loadLocal(){
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/structuur?id=eq.1`,{
+      headers:{'Authorization':`Bearer ${SUPABASE_KEY}`,'apikey':SUPABASE_KEY}
+    });
+    const rows=await r.json();
+    if(rows&&rows.length>0&&rows[0].data){
+      const d=JSON.parse(rows[0].data);
+      DATA=d;nextId=d.nextId||1000;
+    } else {
+      const local=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+      if(local){
+        DATA=local;nextId=local.nextId||1000;
+        await saveLocal();
+      } else {
+        setDefaults();
+        await fetch(`${SUPABASE_URL}/rest/v1/structuur`,{
+          method:'POST',
+          headers:{'Authorization':`Bearer ${SUPABASE_KEY}`,'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({id:1,data:JSON.stringify({klassen:DATA.klassen,nextId})})
+        });
+      }
+    }
+  }catch(e){
+    const local=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    if(local){DATA=local;nextId=local.nextId||1000;}else setDefaults();
+  }
 }
 function setDefaults(){
   DATA={klassen:[
@@ -535,7 +570,7 @@ function handleSearch(query){
   main.innerHTML=html;
 }
 
-loadLocal();render();
+loadLocal().then(()=>render());
 </script>
 </body>
 </html>
