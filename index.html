@@ -389,7 +389,7 @@ function dragEnd(){document.querySelectorAll('.dragging').forEach(el=>el.classLi
 function renderMain(){
   const main=document.getElementById('main');
   if(!sel.klasId){
-    let html=`<div class="welcome"><div class="welcome-title">${isAdmin?'Welkom, Mr. Walschap 👋':'Wiskunde met Walschap'}</div>
+    let html=`<div class="welcome"><div class="welcome-title">${isAdmin?'Welkom, Mr. Walschap 👋':'Wiskunde met Walschap, Wouters en Gielen'}</div>
       <p class="welcome-sub">${isAdmin?'Beheermodus actief.':'Kies een klas om oefeningen te bekijken en te downloaden.'}</p>
       <div class="klas-grid">`;
     DATA.klassen.forEach(k=>{
